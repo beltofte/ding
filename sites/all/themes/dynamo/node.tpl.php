@@ -28,8 +28,6 @@ if($id_node){
     <?php
  		if($field_image_rendered){
 			print $field_image_rendered; 	
-		}else{
-			
 		}
 	?>
   </div>
@@ -39,7 +37,6 @@ if($id_node){
     <div class="subject">
       <?php print return_terms_from_vocabulary($node, "1"); ?> 
     </div>
-
 
   	<?php if($node->title){	?>	
       <h3><?php print l($node->title, 'node/'.$node->nid); ?></h3>
@@ -53,6 +50,9 @@ if($id_node){
   			af <?php print theme('username', $node); ?>
   		</span>	
 
+			<?php print $node->field_library_ref[0]['view'];  ?>
+
+			
   		<?php if (count($taxonomy)){ ?>
   		  <div class="taxonomy">
   	   	  <?php print $terms ?> 
@@ -90,6 +90,7 @@ if($id_node){
 	</div>
 
 	<?php if (count($taxonomy)){ ?>
+
 	  <div class="taxonomy">
    	  <?php print $terms ?> 
 	  </div>  

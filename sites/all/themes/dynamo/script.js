@@ -1,6 +1,7 @@
 $(document).ready(function() {
     $("#user-login-form label").overlabel();
-   	$("#search-form label").overlabel();
+//   	$("#search-form label").overlabel();
+   	$("#ting-search-form label").overlabel();
 //   	$("#comment-form label").overlabel();
 
     $('#frontpagecarousel').jcarousel({

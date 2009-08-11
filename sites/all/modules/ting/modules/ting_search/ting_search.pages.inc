@@ -20,11 +20,44 @@ function ting_search_pages_result() {
 }
 
 /**
+ * Display a Ting collection of objects.
+ */
+function ting_collection() {
+  module_load_include('php', 'ting', 'lib/facade/TingClientFacade');
+	
+  $facade = new TingClientFacade();
+  
+	$collection = $facade->getCollection($_REQUEST['object_id']);
+	if (!$collection)
+	{
+		drupal_not_found();
+	}
+	
+  return theme('ting_collection', $collection);
+}
+
+/**
+ * Display a signle Ting object.
+ */
+function ting_object() {
+  module_load_include('php', 'ting', 'lib/facade/TingFacade');
+	
+  $facade = new TingClientFacade();
+  
+	$object = $facade->getObject($_REQUEST['object_id']);
+	if (!$object)
+	{
+		drupal_not_found();	
+	}
+	
+  return theme('ting_object', $object);
+}
+
+/**
  * JSON callback to search Ting.
  */
 function ting_search_pages_ting_js() {
-  module_load_include('php', 'ting', 'lib/TingClientFactory');
-  module_load_include('php', 'ting', 'lib/services/AdditionalInformationService');
+  module_load_include('php', 'ting', 'lib/facade/TingClientFacade');
   
 	//Get users base query
 	$query = (isset($_REQUEST['query'])) ? $_REQUEST['query'] : 'dc.title:danmark';
@@ -44,55 +77,10 @@ function ting_search_pages_ting_js() {
 		$query .= ' AND '.implode(' AND ', $facetArray);
 	}
 
-	$request = TingClientFactory::getSearchRequest($query);
+	$facade = new TingClientFacade();
 	
-	$resultsPerPage = 10;
-	$page = $_REQUEST['page'];
-	$request->setStart($resultsPerPage * ($page - 1));	
-	
-	$client = TingClientFactory::getClient();
-	$result = $client->search($request);
+	$result = $facade->search($query, $_REQUEST['page'], $resultsPerPage);
 
-	//Add additional information info for cover images
-	$isbns = array();
-	foreach ($result->records as $record)
-	{
-		if (isset($record->data->identifier))
-		{
-			foreach ($record->data->identifier as $identifier)
-			{
-				if ($identifier->type == TingClientRecordIdentifier::ISBN)
-				{
-					$isbns[] = $identifier->id;
-				}
-			}
-		}
-	}
-
-	if (sizeof($isbns) > 0)
-	{
-		//TODO: Move account information to admin settings page
-		$additionalInformationService = new AdditionalInformationService('netpunkt', '710100', 'Juni1706');
-		$additionalInformations = $additionalInformationService->getByIsbn($isbns);
-		
-		foreach ($additionalInformations as $id => $ai)
-		{
-			foreach ($result->records as &$record)
-			{
-				if (isset($record->data->identifier))
-				{						
-					foreach ($record->data->identifier as $identifier)
-					{
-						if ($identifier->type == TingClientRecordIdentifier::ISBN &&
-								$identifier->id == $id)
-						{	
-							$record->additionalInformation = $ai;
-						}
-					}
-				}
-			}
-		}
-	}
   drupal_json($result);
   exit;
 }
@@ -101,7 +89,7 @@ function ting_search_pages_ting_js() {
  * JSON callback to Drupal's content search.
  */
 function ting_search_pages_content_js() {
-  if (isset($_REQUEST['query'])) {
+	if (isset($_REQUEST['query'])) {
     $query = trim($_REQUEST['query']);
     $result = array('results' => do_search($query, 'node'));
     $result['count'] = count($result['results']);
@@ -115,7 +103,7 @@ function ting_search_pages_content_js() {
     if (!empty($result['result_html'])) {
       $result['result_html'] .= theme('pager', NULL, 10, 0);
     }
-  }
+	}
   else {
     $result = array(
       'results' => array(),

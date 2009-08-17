@@ -21,6 +21,11 @@ function alma_menu() {
     'file' => 'alma.admin.inc',
   );
 
+  $items['admin/settings/alma/main'] = array(
+    'title' => 'Alma',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+  );
+
   return $items;
 }
 
@@ -63,6 +68,14 @@ function alma_client() {
 function alma_client_get_branches() {
   try {
     return alma_client()->get_branches();
+  } catch (Exception $e) {
+    return array();
+  }
+}
+
+function alma_client_get_reservation_branches() {
+  try {
+    return alma_client()->get_reservation_branches();
   } catch (Exception $e) {
     return array();
   }

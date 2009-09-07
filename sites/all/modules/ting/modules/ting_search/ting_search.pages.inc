@@ -20,12 +20,12 @@ function ting_search_pages_redirect() {
 /**
  * Display a Ting collection of objects.
  */
-function ting_collection() {
+function ting_collection($object_id) {
   module_load_include('php', 'ting', 'lib/facade/TingClientFacade');
 
   $facade = new TingClientFacade();
   
-  $collection = $facade->getCollection($_REQUEST['object_id']);
+  $collection = $facade->getCollection($object_id);
   if (!$collection) {
     return drupal_not_found();
   }
@@ -92,11 +92,11 @@ function ting_search_cover($preset, $object_id) {
       exit;
     }
 
-    if ($object->additionalInformation->thumbnailUrl) {
-      $source_url =$object->additionalInformation->thumbnailUrl;
-    }
-    else if ($object->additionalInformation->detailUrl) {
+    if ($object->additionalInformation->detailUrl) {
       $source_url = $object->additionalInformation->detailUrl;
+    }
+    elseif ($object->additionalInformation->thumbnailUrl) {
+      $source_url =$object->additionalInformation->thumbnailUrl;
     }
     else {
       drupal_not_found();

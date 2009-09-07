@@ -93,7 +93,7 @@ Drupal.tingSearch.contentPager = function() {
   $("#content-result .pager a").click(function (eventObject) {
     $("#content-result").hide("fast");
     $("#ting-search-spinner").show("normal");
-    Drupal.tingSearch.getContentData(eventObject.srcElement.href, false, true);
+    Drupal.tingSearch.getContentData(this.href, false, true);
     return false;
   });
 }
@@ -128,9 +128,11 @@ Drupal.tingSearch.updateTabs = function (sender) {
     $("#ting-search-spinner").hide("normal");
 
     // If there were no results from Ting and website results available,
-    // switch to the website tab.
+    // switch to the website tab and diable the Ting tab.
     if (Drupal.tingSearch.resultCount.ting == 0 && Drupal.tingSearch.resultCount.content > 0) {
-      $("#ting-search-tabs").tabs("select", 1);
+      $("#ting-search-tabs")
+        .tabs("select", 1)
+        .tabs("disable", 0);
     }
   }
 }

@@ -1,10 +1,9 @@
-<ul>
 	<li>
 
     <div class="picture">
       <?php $image_url = ting_search_cover_url($collection->objects[0], '80_x'); ?>
       <?php if ($image_url) { ?>
-        <?php print theme('image', $image_url, '', '', null, false); ?>
+        <?php print l(theme('image', $image_url, '', '', null, false), $collection->url, array('html' => true)); ?>
       <?php } ?>
     </div>
 
@@ -39,7 +38,7 @@
   		<?php if ($collection->objects[0]->data->description) : ?>
   		<div class="description">
   			<p>
-  				<?php echo implode('</p><p>', $collection->objects[0]->data->description) ?>
+  				<?php echo $collection->objects[0]->data->description[0] ?>
   			</p>
   		</div>
   		<?php endif; ?>
@@ -58,4 +57,3 @@
     </div>
 
 	</li>
-</ul>

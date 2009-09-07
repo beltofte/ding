@@ -5,6 +5,7 @@
 .cache
 .project
 .settings
+*/_notes
 
 # Mac OS X cruft
 .DS_Store

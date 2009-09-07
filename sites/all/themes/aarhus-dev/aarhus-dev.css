@@ -1,0 +1,63 @@
+body {
+	background:#fff url(images/bg-graphpaper.jpg) center top repeat;
+	}
+
+#container {
+	background:transparent url(images/bg-header.jpg) center top no-repeat;
+	}
+	
+#pageheader {
+	background: transparent;
+	}
+	
+#site-name {
+height:30px;
+margin:0 17px 0 520px;
+padding:0 0 9px;
+text-indent:-9999em;
+}
+	
+#site-name a {
+background:transparent url(images/aakb-temp-logo.jpg) no-repeat scroll 0 0;
+height:32px;
+width:456px;
+}
+
+#account h3  {
+	position: absolute;
+	left: -9999em;
+	}
+	
+#ting-search-form {
+background:transparent url(images/search.png) no-repeat scroll 0 0;
+}
+
+#ting-search-form div.example,
+#ting-search-form div.example li a,
+#ting-search-form div.example p {
+color:#efefef;
+}
+
+#user-login-form {
+background:transparent url(images/logind.png) no-repeat scroll 0 0;
+}
+
+.jcarousel-skin-biblo {
+background:transparent url(images/bg-carousel.png) repeat-x scroll center top;
+}
+
+#pagebody {
+background:transparent url(images/bg-page.png) repeat-y scroll center top;
+}
+
+#pagebody-inner {
+background:transparent;
+}
+
+#pagefooter {
+background:transparent url(images/bg-footer.png) no-repeat scroll center bottom;
+}
+
+#pagefooter-inner {
+background:transparent url(images/bg-footer-top.png) no-repeat scroll center top;
+}

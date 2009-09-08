@@ -6,6 +6,7 @@
 .project
 .settings
 */_notes
+update.sh
 
 # Mac OS X cruft
 .DS_Store

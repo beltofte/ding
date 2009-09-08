@@ -1,6 +1,10 @@
 body {
 	background:#fff url(images/bg-graphpaper.jpg) center top repeat;
 	}
+	
+body.logged-in {
+	background:#fff url(images/bg-graphpaper.jpg) center 30px repeat;	
+	}
 
 #container {
 	background:transparent url(images/bg-header.jpg) center top no-repeat;

@@ -3,7 +3,7 @@
 <div class="panel-threecol-33-34-33-stacked clearfix" <?php if (!empty($css_id)) { print "id=\"$css_id\""; } ?>>	
 
 	<div class="panel-top">
- 
+ 		
 	  <ul id="frontpagecarousel" class="jcarousel-skin-biblo">
 	    <li><img src="<?php print path_to_theme();?>/images/test-carousel-1.jpg" width="895" height="183" alt="Test Carousel 1" /></li>
 	    <li><img src="<?php print path_to_theme();?>/images/test-carousel-2.jpg" width="895" height="183" alt="Test Carousel 1" /></li>

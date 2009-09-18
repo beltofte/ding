@@ -1,11 +1,9 @@
 <?php
-/*
   dsm($node);
-	dsm($variables['template_files']);
+/*
+  dsm(get_defined_vars());
   dsm($node);
   dsm($node->content);
-  print_r(get_defined_vars());
-  print $FIELD_NAME_rendered;
 */
 /*
 ad a class="" if we have anything in the $classes var
@@ -34,47 +32,34 @@ if($id_node){
 
   <div class="content">
 
-  	<?php if($node->title){	?>	
-      <h3><?php print l($node->title, 'node/'.$node->nid); ?></h3>
-  	<?php } ?>
-
-
     <div class="subject">
       <?php print return_terms_from_vocabulary($node, "1"); ?> 
     </div>
+
+  	<?php if($node->title){	?>	
+      <h3><?php print l($node->title, 'node/'.$node->nid); ?></h3>
+  	<?php } ?>
 
   	<div class="meta">
   		<span class="time">
   			<?php print format_date($node->created, 'custom', "j F Y") ?> 
   		</span>	
   		<span class="author">
-				<?php print t('by') . ' ' . theme('username', $node); ?>
+  			af <?php print theme('username', $node); ?>
   		</span>	
 
 			<?php print $node->field_library_ref[0]['view'];  ?>
 
 			
+  		<?php if (count($taxonomy)){ ?>
+  		  <div class="taxonomy">
+  	   	  <?php print $terms ?> 
+  		  </div>  
+  		<?php } ?>
   	</div>
 
-    <p>
-		<?php 
-			//field_teaser
-				if($node->field_teaser[0]['value']){
-					print $node->field_teaser[0]['value'];
-				}else{
-					print strip_tags($node->content['body']['#value']);	
-				}
-			?>
-		</p>
-
-		<?php if (count($taxonomy)){ ?>
-		  <div class="taxonomy">
-	   	  <?php print $terms ?> 
-		  </div>  
-		<?php } ?>
-
-
-
+    <?php print $node->content['body']['#value'];?>
+    
   </div>
 
 </div>
@@ -84,34 +69,29 @@ if($id_node){
 
 <div<?php print $id_node . $classes; ?>>
 
-
-
   <div class="subject">
     <?php print return_terms_from_vocabulary($node, "1"); ?> 
   </div>
 
 	<?php if($node->title){	?>	
-	  <h2><?php print $title;?></h2>
+	  <h1><?php print $title;?></h1>
 	<?php } ?>
 
-	<div class="meta">
-	  
-		<?php print format_date($node->created, 'custom', "j F Y") ?> 
-    <i><?php print t('by'); ?></i> 
-		<span class="author"><?php print theme('username', $node); ?></span>	
-	</div>
-
-	<div class="content">
-		<?php print $content ?>
-	</div>
-
 	<?php if (count($taxonomy)){ ?>
-
 	  <div class="taxonomy">
    	  <?php print $terms ?> 
 	  </div>  
 	<?php } ?>
 		
+
+	<div class="content">
+    <?php print $node->content['body']['#value'];?>
+
+    <?php foreach ($field_flexifield_topic as $field) { ?>
+      <?php print $field['view'] ?>
+    <?php } ?>
+	</div>
+
 
   <?php $similar_nodes = similarterms_list(variable_get('ding_similarterms_vocabulary_id', 0)); ?>
   <?php if (count($similar_nodes)) { ?>
@@ -120,13 +100,6 @@ if($id_node){
       <?php print theme('similarterms', variable_get('similarterms_display_options', 'title_only'), $similar_nodes); ?>
     </div>
   <?php } ?>
-
-
-	<?php if ($links){ ?>
-    <?php  print $links; ?>
-	<?php } ?>
-
-
 
 </div>
 <?php } ?>

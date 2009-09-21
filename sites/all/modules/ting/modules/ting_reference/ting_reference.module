@@ -189,21 +189,29 @@ function ting_reference_widget_info() {
 function ting_reference_widget(&$form, &$form_state, $field, $items, $delta = 0) {
   _ting_reference_add_css_js();
 
+  $element['#prefix'] = '<div class="form-item form-ting-reference">';
+  $element['#suffix'] = '</div>';
+
   $element['ting_ref_type'] = array (
     '#type' => 'radios',
     '#title' => 'Reference type',
-    '#default_value' => isset($items[$delta]['ting_ref_type']) ? $items[$delta]['ting_ref_type'] : 'collection',
-    '#options' => array('object' => t('Ting object'), 'collection' => t('Ting collection')),
+    '#default_value' => !empty($items[$delta]['ting_ref_type']) ? $items[$delta]['ting_ref_type'] : 'collection',
+    '#options' => array('collection' => t('Ting collection'), 'object' => t('Ting object')),
     '#attributes' => array('class' => 'ting-reference-type-radio'),
 	);
 	
   $element['search'] = array (
     '#type' => 'textfield',
-    '#title' => 'Search',
+    '#title' => t('Search'),
   	'#attributes' => array('class' => 'form-autocomplete ting-reference-autocomplete')
   );
   $element['preview'] = array (
     '#value' => '<div class="ting-reference-preview"></div>',
+  );
+  $element['reset'] = array (
+    '#type' => 'button',
+    '#value' => t('Reset'),
+  	'#attributes' => array('class' => 'ting-reference-reset'),
   );
   $element['ting_object_id'] = array (
     '#type' => 'hidden',
@@ -269,7 +277,9 @@ function ting_reference_form_alter(&$form, $form_state, $form_id) {
 }
 
 function ting_reference_render_collection_template() {
-  module_load_include('php', 'ting', 'lib/ting-dbc-php5-client/lib/TingClient');
+  module_load_include('php', 'ting', 'lib/ting-dbc-php5-client/lib/result/object/TingClientObject');
+  module_load_include('php', 'ting', 'lib/ting-dbc-php5-client/lib/result/object/TingClientObjectCollection');
+  module_load_include('php', 'ting', 'lib/ting-dbc-php5-client/lib/result/object/data/TingClientDublinCoreData');
   
   $object = new TingClientObject();
   $object->id = 'id';

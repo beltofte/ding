@@ -41,16 +41,23 @@ class TingClientFacade {
 	{
 		if (!isset(self::$requestFactory))
 		{
-			$searchUrl = variable_get('ting_server', false);
-			if (!$searchUrl) {
-				throw new TingClientException('No Ting server defined');
+			$urlVariables = array(	'search' => 'ting_search_url',
+														 	'scan' => 'ting_scan_url',
+															'object' => 'ting_search_url',
+															'collection' => 'ting_search_url',
+															'spell' => 'ting_spell_url',
+															'recommendation' => 'ting_recommendation_server');
+			
+			$urls = array();
+			foreach ($urlVariables as $name => $setting)
+			{
+				$urls[$name] = variable_get($setting, false);
+				if (!$urls[$name]) {
+					throw new TingClientException('No Ting webservice url defined for '.$name);
+				}
 			}
-			$scanUrl = 'http://didicas.dbc.dk/openscan/server.php'; //TODO move this to administration
-			//Create client with default configuration: Drupal for requests and logging, json for format.
-			self::$requestFactory = new RestJsonTingClientRequestFactory(array('search' => $searchUrl,
-																																									'scan' => $scanUrl,
-																																									'object' => $searchUrl,
-																																									'collection' => $searchUrl));
+			
+			self::$requestFactory = new RestJsonTingClientRequestFactory($urls);
 		}
 		return self::$requestFactory;
 	}
@@ -132,6 +139,14 @@ class TingClientFacade {
 		return array_shift(self::addAdditionalInfo(array($object)));
 	}	
 	
+	public static function getSpellSuggestions($word, $numResults = 10)
+	{
+		$request = self::getRequestFactory()->getSpellRequest();
+		$request->setWord($word);
+		$request->setNumResults($numResults);
+		return self::getClient()->execute($request);
+	}
+	
 	private static function addCollectionInfo(TingClientObjectCollection $collection)
 	{
 		$collection->url = url('ting/collection/' . $collection->objects[0]->id, array('absolute' => true));
@@ -174,6 +189,22 @@ class TingClientFacade {
 	{
 		//Add additional information info for cover images
 		$isbns = array();
+
+		$addiVariables = array(	'wsdlUrl' => 'addi_wdsl_url',
+														'username' => 'addi_username',
+														'group' => 'addi_group',
+														'password' => 'addi_password');
+		foreach ($addiVariables as $name => &$setting)
+		{
+			$setting = variable_get($setting, false);
+			if (!$name)
+			{
+				watchdog('TingClient', 'Additional Information service setting '.$name.' not set', array(), WATCHDOG_WARNING);
+				return $collection;
+			}
+		}
+		extract ($addiVariables);
+		$additionalInformationService = new AdditionalInformationService($wsdlUrl, $username, $group, $password);
 		
 		$objects = (isset($collection->objects)) ? $collection->objects : $collection;
 		
@@ -194,8 +225,6 @@ class TingClientFacade {
 	
 		if (sizeof($isbns) > 0)
 		{
-			//TODO: Move account information to admin settings page
-			$additionalInformationService = new AdditionalInformationService('netpunkt', '710100', 'Juni1706');
 			$additionalInformations = $additionalInformationService->getByIsbn($isbns);
 			
 			foreach ($additionalInformations as $id => $ai)

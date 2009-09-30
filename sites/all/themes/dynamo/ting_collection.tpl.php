@@ -1,5 +1,4 @@
 <?php 
-//dsm($collection);
 ?>
 <div id="ting-collection">
 	<div class="content-left">
@@ -24,33 +23,7 @@
 			<div class="tab-navigation-main-inner">
 				<?php
 				// material types retrieved from preprocess hook...
-				
-				//	dpm($sorted_collection);
-				// show the common descriptor
-				$preferred_typekey = "Bog (Dansk)";
-					
-				// Try to fetch a danish book
-				$common_object = null;
-				if(array_key_exists($preferred_typekey, $sorted_collection)) {
-					if(!empty($sorted_collection[$preferred_typekey][0]->data->description[0])) {
-						$common_object = $sorted_collection[$preferred_typekey][0];
-					}	
-				}
-				
-				// just get a book with a description
-				if(!$common_object) {
-					foreach($sorted_collection as $typekey => $objects)
-					{
-						$common_object = $objects[0];
-						
-						if(empty($common_object->data->description[0])) {
-							continue;
-						}
-						break;
-					}
-				}
-				
-			//	dpm($common_object);
+				// $common_object is fetched from the preprocess hook
 				?>
 				
 				<div class="ting-overview clearfix">
@@ -127,6 +100,8 @@
 						<h5><?php print l($tingClientObject->data->title['0'], $tingClientObject->url, array("attributes"=>array('class' => 'alternative'))); ?></h5>
 						<span class='byline'><?php echo t('by'); ?></span>
 						<?php echo l($tingClientObject->data->creator[0], 'search/ting/'.$tingClientObject->data->creator[0], array("attributes"=>array('class' => 'author alternative'))); ?>		
+						
+						<div class='language'><?php echo t('Language: ') . $tingClientObject->data->language[1]; ?></div>
 						<?php
 						for ($i=1; $i<count($tingClientObject->data->creator); $i++)
 						{

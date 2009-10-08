@@ -31,5 +31,4 @@
 
 
 </div>
->>>>>>> kdb/master
 <!-- / panels-threecol-33-34-33-stacked.tpl.php-->

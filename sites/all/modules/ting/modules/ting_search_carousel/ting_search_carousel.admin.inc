@@ -16,6 +16,8 @@ function ting_search_carousel_admin_page() {
   drupal_add_js($path . '/js/ting_search_carousel.admin.js');
   drupal_add_css($path . '/css/ting_search_carousel.css');
   
+  jquery_ui_add(array('ui.draggable', 'ui.sortable'));
+  
   return drupal_get_form('ting_search_carousel_admin_form');
 }
 
@@ -35,10 +37,13 @@ function ting_search_carousel_admin_form($form_state) {
   $searches = variable_get('ting_search_carousel_searches', array());
   if ($searches) {
     foreach ($searches as $delta => $search) {
-      $form['ting_search_carousel_searches'][$delta] = array(
-        '#type' => 'ting_search_carousel_search',
-        '#value' => $search
-      );
+    	if ($search['title'])
+    	{
+	      $form['ting_search_carousel_searches'][$delta] = array(
+	        '#type' => 'ting_search_carousel_search',
+	        '#value' => $search
+	      );
+    	}
     }
   }
   else {

@@ -1,5 +1,5 @@
-name        = koldingdev
-description = kolding demo theme 
+name        = kolding dev
+description = kolding dev-theme 
 screenshot  = screenshot.png
 version     = dev 0.1
 core        = 6.x

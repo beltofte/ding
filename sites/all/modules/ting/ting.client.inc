@@ -26,40 +26,44 @@ foreach ($includes as $include) {
  *
  * @param string $object_id
  *    Ting object ID.
+ * @param bool $enrich
+ *    Whether to enrich the object with additional information, covers etc.
  * @return mixed
  *    Object, if found - boolean FALSE if not.
  */
-function ting_get_object_by_id($object_id) {
+function ting_get_object_by_id($object_id, $enrich = false) {
 	$request = ting_get_request_factory()->getObjectRequest();
 	$request->setObjectId($object_id);
+	$request = ting_add_agency($request);
 	$object = ting_get_client()->execute($request);
-	return ($object) ? array_shift(ting_add_additional_info(array(ting_add_object_url($object)))) : false;
+
+	if ($object) {
+		$object = ting_add_object_url($object);
+		$object = ($enrich) ? array_shift(ting_add_additional_info(array($object))) : $object;
+	}
+	return ($object) ? $object : false;
 }
 
 /**
- * @param string $localId
+ * Load an object from Ting by local ID (faust number).
+ *
+ * @param string $local_id
+ *    Local identifier
+ * @param bool $enrich
+ *    Whether to enrich the object with additional information, covers etc.
  * @return TingClientObject
  */
-function ting_get_object_by_local_id($local_id) {
+function ting_get_object_by_local_id($local_id, $enrich = false) {
 	$request = ting_get_request_factory()->getObjectRequest();
 	$request->setLocalId($local_id);
+	$request = ting_add_agency($request);
 	$object = ting_get_client()->execute($request);
-	return ($object) ? array_shift(ting_add_additional_info(array(ting_add_object_url($object)))) : false;
-}	
 
-/**
- * Display a Ting collection of objects.
- *
- * @param string $collection_id
- *    Ting collection ID.
- * @return mixed
- *    Collection object, if found - boolean FALSE if not.
- */
-function ting_get_collection_by_id($object_id) {
-	$request = ting_get_request_factory()->getCollectionRequest();
-	$request->setObjectId($object_id);
-	$collection = ting_get_client()->execute($request);
-  return ($collection) ? ting_add_collection_info(ting_add_additional_info($collection)) : false;
+	if ($object) {
+		$object = ting_add_object_url($object);
+		$object = ($enrich) ? array_shift(ting_add_additional_info(array($object))) : $object;
+	}
+	return ($object) ? $object : false;
 }
 
 /**
@@ -67,28 +71,64 @@ function ting_get_collection_by_id($object_id) {
  *
  * @param string $collection_id
  *    Ting collection ID.
+ * @param bool $enrich
+ *    Whether to enrich objects in the collection with additional information, covers etc.
  * @return mixed
  *    Collection object, if found - boolean FALSE if not.
+ */
+function ting_get_collection_by_id($object_id, $enrich = false) {
+	$request = ting_get_request_factory()->getCollectionRequest();
+	$request->setObjectId($object_id);
+  $request = ting_add_agency($request);
+	$collection = ting_get_client()->execute($request);
+
+	if ($collection) {
+		$collection = ting_add_collection_info($collection);
+		$collection = ($enrich) ? ting_add_additional_info($collection) : $collection;
+	}
+	return ($collection) ? $collection : false;
+}
+
+/**
+ * Performs a search agains the 
+ *
+ * @param string $query
+ *    The search query
+ * @param int $page
+ *    The page number to retrieve search results for
+ * @param int $resultsPerPage
+ *    The number of results to include per page
+ * @param array $options
+ *    Options to pass to the search. Possible options are:
+ *    - facets: Array of facet names for which to return results. Default: facet.subject, facet.creator, facet.type, facet.date, facet.language
+ *    - numFacets: The number of terms to include with each facet. Default: 10
+ *    - enrich: Whether to include additional information and cover images with each object. Default: false
+ *    - supportingTypes: Whether to include supporting types such as reviews. Default: false
+ * @return TingClientSearchResult
+ *    The search result
  */
 function ting_do_search($query, $page = 1, $resultsPerPage = 10, $options = array()) {
 	$request = ting_get_request_factory()->getSearchRequest();
 	$request->setQuery($query);
+	$request = ting_add_agency($request);
 	$request->setStart($resultsPerPage * ($page - 1) + 1);
 	$request->setNumResults($resultsPerPage);
-		
+  
+	$request->setQuery((!isset($options['supportingTypes']) || !$options['supportingTypes']) ? $request->getQuery().' AND NOT facet.type:materialevurdering AND NOT facet.type:anmeldelse' : $request->getQuery());	
 	$request->setFacets((isset($options['facets'])) ? $options['facets'] : array('facet.subject', 'facet.creator', 'facet.type', 'facet.date', 'facet.language'));
 	$request->setNumFacets((isset($options['numFacets'])) ? $options['numFacets'] : ((sizeof($request->getFacets()) == 0) ? 0 : 10));
-		
+
 	$searchResult = ting_get_client()->execute($request);
-		
+
 	//Decorate search result with additional information
-	foreach ($searchResult->collections as &$collection)
-	{
+	foreach ($searchResult->collections as &$collection) {
 		$collection = ting_add_collection_info($collection);
-		$collection = ting_add_additional_info($collection);
+		if (isset($options['enrich']) && $options['enrich']) {
+			$collection = ting_add_additional_info($collection);
+		}
 		$collection = ting_sort_objects($collection);
 	}
-		
+
 	return $searchResult;
 }
 
@@ -104,10 +144,27 @@ function ting_do_scan($query, $numResults = 10) {
 	$request->setNumResults($numResults);
 	return ting_get_client()->execute($request);
 }
-	
+
+/**
+ * @param string $word The word to get spell suggestions for
+ * @param $numResults The number of results to return
+ * @return array An array of TingClientSpellSuggestion objects
+ */
 function ting_get_spell_suggestions($word, $numResults = 10) {
 	$request = ting_get_request_factory()->getSpellRequest();
 	$request->setWord($word);
+	$request->setNumResults($numResults);
+	return ting_get_client()->execute($request);
+}
+
+/**
+ * @param string $word The word to get spell suggestions for
+ * @param $numResults The number of results to return
+ * @return array An array of TingClientSpellSuggestion objects
+ */
+function ting_get_object_recommendations($isbn, $numResults = 10) {
+	$request = ting_get_request_factory()->getObjectRecommendationRequest();
+	$request->setIsbn($isbn);
 	$request->setNumResults($numResults);
 	return ting_get_client()->execute($request);
 }
@@ -117,13 +174,13 @@ function ting_get_spell_suggestions($word, $numResults = 10) {
  */
 function ting_get_client() {
 	static $client;
-	
+
 	if (!isset($client))
 	{
 		$client = new TingClient(new TingClientDrupal6HttpRequestAdapter(),
-																			new TingClientDrupalWatchDogLogger());
+		new TingClientDrupalWatchDogLogger());
 	}
-	
+
 	return $client;
 }
 
@@ -132,7 +189,7 @@ function ting_get_client() {
  */
 function ting_get_request_factory() {
 	static $requestFactory;
-	
+
 	if (!isset($requestFactory))
 	{
 		$urlVariables = array(	'search' => 'ting_search_url',
@@ -150,10 +207,10 @@ function ting_get_request_factory() {
 				throw new TingClientException('No Ting webservice url defined for '.$name);
 			}
 		}
-		
+
 		$requestFactory = new RestJsonTingClientRequestFactory($urls);
 	}
-	
+
 	return $requestFactory;
 }
 
@@ -169,16 +226,16 @@ function ting_add_collection_info(TingClientObjectCollection $collection)
 	$collection->types = array_unique($types);
 	return $collection;
 }
-	
+
 function ting_sort_objects($collection)
 {
 	usort($collection->objects, 'ting_compare_objects');
 	$collection->objects = array_reverse($collection->objects);
-	
+
 	foreach ($collection->objects as $i => $object)
 	{
-		if (isset($object->additionalInformation->detailUrl) || 
-				isset($object->additionalInformation->thumbnailUrl))
+		if (isset($object->additionalInformation->detailUrl) ||
+		isset($object->additionalInformation->thumbnailUrl))
 		{
 			$object = array_shift(array_slice($collection->objects, $i, 1));
 			unset($collection->objects[$i]);
@@ -186,7 +243,7 @@ function ting_sort_objects($collection)
 			break;
 		}
 	}
-		
+
 	return $collection;
 }
 
@@ -195,7 +252,7 @@ function ting_add_object_url(TingClientObject $object)
 	$object->url = url('ting/object/'.$object->id, array('absolute' => true));
 	return $object;
 }
-	
+
 function ting_add_additional_info($collection)
 {
 	//Add additional information info for cover images
@@ -216,9 +273,9 @@ function ting_add_additional_info($collection)
 	}
 	extract ($addiVariables);
 	$additionalInformationService = new AdditionalInformationService($wsdlUrl, $username, $group, $password);
-		
+
 	$objects = (isset($collection->objects)) ? $collection->objects : $collection;
-	
+
 	foreach($objects as $object)
 	{
 		if (isset($object->data->identifier))
@@ -238,18 +295,18 @@ function ting_add_additional_info($collection)
 		try
 		{
 			$additionalInformations = $additionalInformationService->getByIsbn($isbns);
-			
+				
 			foreach ($additionalInformations as $id => $ai)
 			{
 				foreach ($objects as &$object)
 				{
 					if (isset($object->data->identifier))
-					{						
+					{
 						foreach ($object->data->identifier as $identifier)
 						{
 							if ($identifier->type == TingClientObjectIdentifier::ISBN &&
-									$identifier->id == $id)
-							{	
+							$identifier->id == $id)
+							{
 								$object->additionalInformation = $ai;
 							}
 						}
@@ -262,24 +319,24 @@ function ting_add_additional_info($collection)
 			watchdog('TingClient', 'Error retrieving additional information and covers: '.$e->getMessage(), $isbns, WATCHDOG_ERROR);
 		}
 	}
-	
+
 	if (isset($collection->objects))
 	{
 		$collection->objects = $objects;
 	}
 	else
 	{
-		$collection = $objects;			
+		$collection = $objects;
 	}
-	
+
 	return $collection;
 }
-	
+
 function ting_compare_objects($o1, $o2, $criterias = NULL)
 {
 	$criterias = ($criterias) ? $criterias : array(	'language' => array('Dansk', 'Engelsk'),
 																									'type' => array('Bog', 'DVD'));
-		foreach ($criterias as $attribute => $values)
+	foreach ($criterias as $attribute => $values)
 	{
 		foreach ($values as $value)
 		{
@@ -288,10 +345,10 @@ function ting_compare_objects($o1, $o2, $criterias = NULL)
 			if ($o1Check && !$o2Check)
 			{
 				return 1;
-			} 
+			}
 			else if (!$o1Check && $o2Check)
 			{
-				return -1;	
+				return -1;
 			}
 			else if ($o1Check && $o2Check && (sizeof($criterias) > 1))
 			{
@@ -300,6 +357,15 @@ function ting_compare_objects($o1, $o2, $criterias = NULL)
 			}
 		}
 	}
-			
+		
 	return 0;
+}
+
+function ting_add_agency(TingClientAgentRequest $request)
+{
+	if ($agency = variable_get('ting_agency', false))
+	{
+		$request->setAgency($agency);
+	}
+	return $request;
 }

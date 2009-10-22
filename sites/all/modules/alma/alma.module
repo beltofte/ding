@@ -187,6 +187,27 @@ function alma_client_get_debts($borr_card, $pin_code) {
 }
 
 /**
+ * Add reservation.
+ *
+ * @param string $borr_card
+ *    Library patron's borrowing card number. Either just an arbitrary
+ *    number printed on their library card or their CPR-code.
+ * @param string $pin_code
+ *    Library patron's current four digit PIN code.
+ * @param array $reservation
+ *    Data for the reservation we're adding.
+ */
+function alma_client_add_reservation($borr_card, $pin_code, $reservation) {
+  try {
+    return alma_client()->add_reservation($borr_card, $pin_code, $reservation);
+  }
+  catch (Exception $e) {
+    watchdog('alma_user', 'add_reservation error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+    return FALSE;
+  }
+}
+
+/**
  * Change a reservation
  *
  * @param string $borr_card
@@ -231,7 +252,7 @@ function alma_client_remove_reservation($borr_card, $pin_code, $reservation) {
 }
 
 /**
- * Remove a reservation
+ * Renew a loan
  *
  * @param string $borr_card
  *    Library patron's borrowing card number. Either just an arbitrary
@@ -383,5 +404,54 @@ function alma_client_remove_email_address($borr_card, $pin_code, $email_id) {
     watchdog('alma_user', 'remove_email_address error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
     return FALSE;
   }
+}
+
+/**
+ * Change PIN code.
+ *
+ * @param string $borr_card
+ *    Library patron's borrowing card number. Either just an arbitrary
+ *    number printed on their library card or their CPR-code.
+ * @param string $pin_code
+ *    Library patron's current four digit PIN code.
+ * @param string $new_pin
+ *    Library patron's new four digit PIN code.
+ */
+function alma_client_change_pin($borr_card, $pin_code, $new_pin) {
+  try {
+    return alma_client()->change_pin($borr_card, $pin_code, $new_pin);
+  }
+  catch (Exception $e) {
+    watchdog('alma_user', 'change_pin error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+    return FALSE;
+  }
+}
+
+/**
+ * Check if user has reservation already.
+ *
+ * @param string $borr_card
+ *    Library patron's borrowing card number. Either just an arbitrary
+ *    number printed on their library card or their CPR-code.
+ * @param string $pin_code
+ *    Library patron's current four digit PIN code.
+ * @param string $item_id
+ *    Local ID for the item we're checking for.
+ * @return boolean
+ */
+function alma_client_user_has_reservation($borr_card, $pin_code, $item_id) {
+  try {
+    $reservations = alma_client()->get_reservations($borr_card, $pin_code);
+  } catch (Exception $e) {
+    watchdog('alma_user', 'get_reservations error: “@message”', array('@message' => $e->getMessage(), WATCHDOG_ERROR));
+  }
+
+  foreach ($reservations as $res) {
+    if ($res['record_id'] == $item_id) {
+      return TRUE;
+    }
+  } 
+
+  return FALSE;
 }
 

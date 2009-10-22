@@ -16,7 +16,7 @@ class AlmaClient {
    * Constructor, checking if we have a sensible value for $base_url.
    */
   function __construct($base_url) {
-    if (/*stripos('http', $base_url) === 0 &&*/ filter_var($base_url, FILTER_VALIDATE_URL, FILTER_FLAG_SCHEME_REQUIRED)) {
+    if (stripos($base_url, 'http') === 0 && filter_var($base_url, FILTER_VALIDATE_URL, FILTER_FLAG_SCHEME_REQUIRED)) {
       $this->base_url = $base_url;
     }
     else {
@@ -26,7 +26,7 @@ class AlmaClient {
   }
 
   /**
-   * Perform request to the Alma server
+   * Perform request to the Alma server.
    *
    * @param string $method
    *    The REST method to call e.g. 'patron/status'. borrCard and pinCode
@@ -110,7 +110,7 @@ class AlmaClient {
   }
 
   /**
-   * Get patron information from Alma
+   * Get patron information from Alma.
    */
   public function get_patron_info($borr_card, $pin_code) {
     $doc = $this->request('patron/information', array('borrCard' => $borr_card, 'pinCode' => $pin_code));
@@ -210,7 +210,7 @@ class AlmaClient {
   }
 
   /**
-   * Helper function for sorting reservations.
+   * Helper function for sorting loans.
    */
   private static function loan_sort($a, $b) {
     return strcmp($a['due_date'], $b['due_date']);
@@ -239,6 +239,35 @@ class AlmaClient {
     }
 
     return $data;
+  }
+
+  /**
+   * Add a reservation.
+   */
+  public function add_reservation($borr_card, $pin_code, $reservation) {
+    // Initialise the query parameters with the current value from the
+    // reservation array.
+    $params = array(
+      'borrCard' => $borr_card,
+      'pinCode' => $pin_code,
+      'reservable' => $reservation['id'],
+      'reservationPickUpBranch' => $reservation['pickup_branch'],
+      'reservationValidFrom' => $reservation['valid_from'],
+      'reservationValidTo' => $reservation['valid_to'],
+    );
+
+    // If there's not a validFrom date, set it as today.
+    if (empty($params['reservationValidFrom'])) {
+      $params['reservationValidFrom'] = date('Y-m-d', $_SERVER['REQUEST_TIME']);
+    }
+
+    // If there's not a validTo date, set it a year in the future.
+    if (empty($params['reservationValidTo'])) {
+      $params['reservationValidTo'] = intval(date('Y', $_SERVER['REQUEST_TIME'])) + 1 . date('-m-d', $_SERVER['REQUEST_TIME']);
+    }
+
+    $doc = $this->request('patron/reservations/add', $params);
+    return TRUE;
   }
 
   /**
@@ -297,7 +326,7 @@ class AlmaClient {
   }
 
   /**
-   * Add phone number
+   * Add phone number.
    */
   public function add_phone_number($borr_card, $pin_code, $new_number, $sms = TRUE) {
     $params = array(
@@ -311,7 +340,7 @@ class AlmaClient {
   }
 
   /**
-   * Change phone number
+   * Change phone number.
    */
   public function change_phone_number($borr_card, $pin_code, $number_id, $new_number, $sms = TRUE) {
     $params = array(
@@ -326,7 +355,7 @@ class AlmaClient {
   }
 
   /**
-   * Delete phone number
+   * Delete phone number.
    */
   public function remove_phone_number($borr_card, $pin_code, $number_id) {
     $params = array(
@@ -339,7 +368,7 @@ class AlmaClient {
   }
 
   /**
-   * Add e-mail address
+   * Add e-mail address.
    */
   public function add_email_address($borr_card, $pin_code, $new_email) {
     $params = array(
@@ -352,7 +381,7 @@ class AlmaClient {
   }
 
   /**
-   * Change e-mail address
+   * Change e-mail address.
    */
   public function change_email_address($borr_card, $pin_code, $email_id, $new_email= FALSE) {
     $params = array(
@@ -370,7 +399,7 @@ class AlmaClient {
   }
 
   /**
-   * Delete e-mail address
+   * Delete e-mail address.
    */
   public function remove_email_address($borr_card, $pin_code, $email_id) {
     $params = array(
@@ -379,6 +408,19 @@ class AlmaClient {
       'emailAddress' => $email_id,
     );
     $doc = $this->request('patron/email/remove', $params);
+    return TRUE;
+  }
+
+  /**
+   * Change PIN code.
+   */
+  public function change_pin($borr_card, $pin_code, $new_pin) {
+    $params = array(
+      'borrCard' => $borr_card,
+      'pinCode' => $pin_code,
+      'pinCodeChange' => $new_pin,
+    );
+    $doc = $this->request('patron/pinCode/change', $params);
     return TRUE;
   }
 }

@@ -35,7 +35,7 @@ function ting_get_object_by_id($object_id, $enrich = false) {
 	$request = ting_get_request_factory()->getObjectRequest();
 	$request->setObjectId($object_id);
 	$request = ting_add_agency($request);
-	$object = ting_get_client()->execute($request);
+  $object = ting_execute($request);
 
 	if ($object) {
 		$object = ting_add_object_url($object);
@@ -57,7 +57,7 @@ function ting_get_object_by_local_id($local_id, $enrich = false) {
 	$request = ting_get_request_factory()->getObjectRequest();
 	$request->setLocalId($local_id);
 	$request = ting_add_agency($request);
-	$object = ting_get_client()->execute($request);
+	$object = ting_execute($request);
 
 	if ($object) {
 		$object = ting_add_object_url($object);
@@ -80,7 +80,7 @@ function ting_get_collection_by_id($object_id, $enrich = false) {
 	$request = ting_get_request_factory()->getCollectionRequest();
 	$request->setObjectId($object_id);
   $request = ting_add_agency($request);
-	$collection = ting_get_client()->execute($request);
+	$collection = ting_execute($request);
 
 	if ($collection) {
 		$collection = ting_add_collection_info($collection);
@@ -114,11 +114,11 @@ function ting_do_search($query, $page = 1, $resultsPerPage = 10, $options = arra
 	$request->setStart($resultsPerPage * ($page - 1) + 1);
 	$request->setNumResults($resultsPerPage);
   
-	$request->setQuery((!isset($options['supportingTypes']) || !$options['supportingTypes']) ? $request->getQuery().' AND NOT facet.type:materialevurdering AND NOT facet.type:anmeldelse' : $request->getQuery());	
+	$request = (!isset($options['supportingTypes']) || !$options['supportingTypes']) ? ting_remove_supporting_types($request) : $request;
 	$request->setFacets((isset($options['facets'])) ? $options['facets'] : array('facet.subject', 'facet.creator', 'facet.type', 'facet.date', 'facet.language'));
 	$request->setNumFacets((isset($options['numFacets'])) ? $options['numFacets'] : ((sizeof($request->getFacets()) == 0) ? 0 : 10));
 
-	$searchResult = ting_get_client()->execute($request);
+	$searchResult = ting_execute($request);
 
 	//Decorate search result with additional information
 	foreach ($searchResult->collections as &$collection) {
@@ -142,7 +142,7 @@ function ting_do_scan($query, $numResults = 10) {
 	$request->setField('phrase.anyIndexes');
 	$request->setLower($query);
 	$request->setNumResults($numResults);
-	return ting_get_client()->execute($request);
+	return ting_execute($request);
 }
 
 /**
@@ -154,7 +154,7 @@ function ting_get_spell_suggestions($word, $numResults = 10) {
 	$request = ting_get_request_factory()->getSpellRequest();
 	$request->setWord($word);
 	$request->setNumResults($numResults);
-	return ting_get_client()->execute($request);
+	return ting_execute($request);
 }
 
 /**
@@ -166,10 +166,28 @@ function ting_get_object_recommendations($isbn, $numResults = 10) {
 	$request = ting_get_request_factory()->getObjectRecommendationRequest();
 	$request->setIsbn($isbn);
 	$request->setNumResults($numResults);
-	return ting_get_client()->execute($request);
+	return ting_execute($request);
 }
 
 /**
+ * Perform a request against Ting and perform error handling if necessary
+ * 
+ * @param $request The request
+ * @return mixed Result of the request or false if an error occurs 
+ */
+function ting_execute($request)
+{
+	try {
+  	return ting_get_client()->execute($request);
+	} catch (TingClientException $e) {
+	  watchdog('ting client', 'Error performing request: '.$e->getMessage(), $request, WATCHDOG_ERROR, 'http://'.$_SERVER["HTTP_HOST"].$_SERVER["REQUEST_URI"]);
+		return false;
+	}
+}
+
+/**
+ * Retrieves an initialized Ting client with appropriate request adapter and logger 
+ * 
  * @return TingClient
  */
 function ting_get_client() {
@@ -185,6 +203,8 @@ function ting_get_client() {
 }
 
 /**
+ * Retrieves an initialized Ting client request factory.
+ * 
  * @return TingClientRequestFactory
  */
 function ting_get_request_factory() {
@@ -367,5 +387,12 @@ function ting_add_agency(TingClientAgentRequest $request)
 	{
 		$request->setAgency($agency);
 	}
+	return $request;
+}
+
+function ting_remove_supporting_types(TingClientSearchRequest $request)
+{
+	$supportingTypes = array('materialevurdering*', 'anmeldelse');
+	$request->setQuery($request->getQuery().' NOT ('.implode(' OR ', $supportingTypes).')');
 	return $request;
 }
